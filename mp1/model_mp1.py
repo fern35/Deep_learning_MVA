@@ -124,7 +124,9 @@ def hourglass(input_shape=(72,72,1),lr=0.001):
     _x = BatchNormalization(axis=3)(_x)
     _x = Activation('relu')(_x)
 
-    _x = Concatenate([_x,_y],axis=3)
+    print(_x.output_shape)
+    print(_y.output_shape)
+    _x = concatenate([_x,_y],axis=3)
     # _x = Concatenate([_x,_y], mode = 'concat',concat_axis=3)
     
     _x = UpSampling2D(size=(2, 2), data_format='channels_last')(_x)
