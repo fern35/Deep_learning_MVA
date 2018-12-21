@@ -99,45 +99,48 @@ def autoencoder(input_shape=(72,72,1),lr=0.001):
     return model
     
 def hourglass(input_shape=(72,72,1),lr=0.001):
+    k_size = (3,3)
     input = Input(shape=input_shape)
 
-    _x = Convolution2D(32, kernel_size=(5,5), strides=(2, 2), data_format='channels_last',padding='same') (input)
+    _x = Convolution2D(32, kernel_size=k_size, strides=(2, 2), data_format='channels_last',padding='same') (input)
     _x = BatchNormalization(axis=3)(_x)
     _x = Activation('relu')(_x)
-    _x = MaxPooling2D(pool_size=(2, 2), padding='same', data_format='channels_last')(_x)
-    
-    _y = Convolution2D(32, (5, 5), padding='same', data_format='channels_last')(_x)
-    
-    _x = Convolution2D(64, (5, 5), padding='same', data_format='channels_last')(_x)
+    _x = Convolution2D(32, k_size, padding='same', data_format='channels_last')(_x)
     _x = BatchNormalization(axis=3)(_x)
     _x = Activation('relu')(_x)
-    _x = Convolution2D(64, (5, 5), padding='same', data_format='channels_last')(_x)
+    _x_branch = MaxPooling2D(pool_size=(2, 2), padding='same', data_format='channels_last')(_x)
+    
+    _x = Convolution2D(128, k_size, padding='same', data_format='channels_last')(_x_branch)
+    _x = BatchNormalization(axis=3)(_x)
+    _x = Activation('relu')(_x)
+    _x = Convolution2D(128, k_size, padding='same', data_format='channels_last')(_x)
     _x = BatchNormalization(axis=3)(_x)
     _x = Activation('relu')(_x)
     _x = MaxPooling2D(pool_size=(2, 2), padding='same', data_format='channels_last')(_x)
     
     _x = UpSampling2D(size=(2, 2), data_format='channels_last')(_x)
-    _x = Convolution2D(32, (5, 5), padding='same', data_format='channels_last')(_x)
+    _x = Convolution2D(64, k_size, padding='same', data_format='channels_last')(_x)
     _x = BatchNormalization(axis=3)(_x)
     _x = Activation('relu')(_x)
-    _x = Convolution2D(32, (5, 5), padding='same', data_format='channels_last')(_x)
+    _x = Convolution2D(64, k_size, padding='same', data_format='channels_last')(_x)
     _x = BatchNormalization(axis=3)(_x)
     _x = Activation('relu')(_x)
 
-    print(_x)
-    print(_y)
-    _x = concatenate([_x,_y],axis=3)
-    # _x = Concatenate([_x,_y], mode = 'concat',concat_axis=3)
+    _x = concatenate([_x,_x_branch],axis=3)
     
     _x = UpSampling2D(size=(2, 2), data_format='channels_last')(_x)
-    _x = Convolution2D(32, (5, 5), padding='same', data_format='channels_last')(_x)
+    _x = Convolution2D(32, k_size, padding='same', data_format='channels_last')(_x)
+    _x = BatchNormalization(axis=3)(_x)
+    _x = Activation('relu')(_x)
+    
+    _x = UpSampling2D(size=(2, 2), data_format='channels_last')(_x)
+    _x = Convolution2D(32, k_size, padding='same', data_format='channels_last')(_x)
     _x = BatchNormalization(axis=3)(_x)
     _x = Activation('relu')(_x)
 
-    _x = Convolution2D(1, (5, 5), padding='same', data_format='channels_last')(_x)
+    _x = Convolution2D(1, k_size, padding='same', data_format='channels_last')(_x)
     _x = Activation('sigmoid')(_x)
-    # model.add(Convolution2D(1, (5, 5), padding='same', data_format='channels_last'))
-    # model.add(Activation('sigmoid'))
+
     
     model = Model(inputs=input, outputs=_x)
     adam = Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=1e-6, amsgrad=False)
