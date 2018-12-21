@@ -1,7 +1,9 @@
 ### This file includes the functions for building models
 
-from keras.models import Sequential, load_model
-from keras.layers import Dense, Activation, Dropout,Convolution2D, MaxPooling2D, Flatten,BatchNormalization,UpSampling2D
+from keras.models import *
+from keras.layers import *
+# from keras.models import Sequential, load_model
+# from keras.layers import Dense, Activation, Dropout,Convolution2D, MaxPooling2D, Flatten,BatchNormalization,UpSampling2D
 from keras.optimizers import Adam,SGD
 from keras.utils import np_utils
 from keras.callbacks import ModelCheckpoint
@@ -74,7 +76,7 @@ def CNN_RegModel(input_shape=(1,72,72),output_dim=6,lr=0.0008,model_path='model.
     # print(model.summary())
     return model, callbacks_list
 
-def hourglass(input_shape=(72,72,1),lr=0.001):
+def autoencoder(input_shape=(72,72,1),lr=0.001):
     model = Sequential()
     model.add(Convolution2D(32, (5, 5), padding='same', data_format='channels_last', input_shape=input_shape))
     model.add(BatchNormalization(axis=3))
@@ -96,4 +98,48 @@ def hourglass(input_shape=(72,72,1),lr=0.001):
                    metrics=['accuracy'])
     return model
     
+def hourglass(input_shape=(72,72,1),lr=0.001):
+    input = Input(shape=input_shape)
+
+    _x = Convolution2D(32, kernel_size=(5,5), strides=(2, 2), data_format='channels_last',padding='same') (input)
+    _x = BatchNormalization(axis=3)(_x)
+    _x = Activation('relu')(_x)
+    _x = MaxPooling2D(pool_size=(2, 2), padding='same', data_format='channels_last')(_x)
     
+    _y = Convolution2D(32, (5, 5), padding='same', data_format='channels_last')(_x)
+    
+    _x = Convolution2D(64, (5, 5), padding='same', data_format='channels_last')(_x)
+    _x = BatchNormalization(axis=3)(_x)
+    _x = Activation('relu')(_x)
+    _x = Convolution2D(64, (5, 5), padding='same', data_format='channels_last')(_x)
+    _x = BatchNormalization(axis=3)(_x)
+    _x = Activation('relu')(_x)
+    _x = MaxPooling2D(pool_size=(2, 2), padding='same', data_format='channels_last')(_x)
+    
+    _x = UpSampling2D(size=(2, 2), data_format='channels_last')(_x)
+    _x = Convolution2D(32, (5, 5), padding='same', data_format='channels_last')(_x)
+    _x = BatchNormalization(axis=3)(_x)
+    _x = Activation('relu')(_x)
+    _x = Convolution2D(32, (5, 5), padding='same', data_format='channels_last')(_x)
+    _x = BatchNormalization(axis=3)(_x)
+    _x = Activation('relu')(_x)
+
+    _x = Concatenate([_x,_y],axis=3)
+    # _x = Concatenate([_x,_y], mode = 'concat',concat_axis=3)
+    
+    _x = UpSampling2D(size=(2, 2), data_format='channels_last')(_x)
+    _x = Convolution2D(32, (5, 5), padding='same', data_format='channels_last')(_x)
+    _x = BatchNormalization(axis=3)(_x)
+    _x = Activation('relu')(_x)
+
+    _x = Convolution2D(1, (5, 5), padding='same', data_format='channels_last')(_x)
+    _x = Activation('sigmoid')(_x)
+    # model.add(Convolution2D(1, (5, 5), padding='same', data_format='channels_last'))
+    # model.add(Activation('sigmoid'))
+    
+    model = Model(inputs=input, outputs=_x)
+    adam = Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=1e-6, amsgrad=False)
+    model.compile(optimizer=adam,
+                   loss='binary_crossentropy',
+                   metrics=['accuracy'])
+    return model
