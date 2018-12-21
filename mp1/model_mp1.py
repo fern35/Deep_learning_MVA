@@ -10,11 +10,13 @@ from keras.callbacks import ModelCheckpoint
 
 
 def DenseModel(optimizer='sgd'):
+    """ build model for Q3 Simple classification """
     model = Sequential([Dense(3, input_shape=(5184,), activation='softmax')])
     model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
     return model
 
 def CNN_ClassModel(input_shape=(1, 72, 72),n_class=3,lr=0.001):
+    """ build model for Q5 a more difficult classification problem """
     model=Sequential()
     model.add(Convolution2D(filters=16,nb_row=5,nb_col=5, 
     #                         kernel_size=5,strides=1,
@@ -37,6 +39,7 @@ def CNN_ClassModel(input_shape=(1, 72, 72),n_class=3,lr=0.001):
     return model
 
 def CNN_RegModel(input_shape=(1,72,72),output_dim=6,lr=0.0008,model_path='model.h5'):
+    """ build model for Q6 regression problem """
     model=Sequential()
     model.add(Convolution2D(filters=16,nb_row=5,nb_col=5, padding='same',data_format='channels_first',input_shape=input_shape))
 
@@ -99,6 +102,7 @@ def autoencoder(input_shape=(72,72,1),lr=0.001):
     return model
     
 def hourglass(input_shape=(72,72,1),lr=0.001):
+    """ build model for Q7 Image denoising """
     k_size = (3,3)
     input = Input(shape=input_shape)
 
